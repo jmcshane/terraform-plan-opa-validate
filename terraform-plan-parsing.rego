@@ -2,6 +2,15 @@ package terraform.parsing
 
 import input as tfplan
 
+# Top level allow statement
+
+default allow = false
+allow {
+    not has_default_service_account
+    kube_daemonset_rule
+    not found_open_ports
+}
+
 # Check network security rules
 
 default found_open_ports = false
