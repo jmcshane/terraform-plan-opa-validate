@@ -121,6 +121,7 @@ resource "kubernetes_deployment" "example" {
       }
 
       spec {
+        service_account_name = "app_sa"
         container {
           image = "nginx:1.7.8"
           name  = "example"
