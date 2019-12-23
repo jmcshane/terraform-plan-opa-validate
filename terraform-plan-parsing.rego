@@ -16,6 +16,33 @@ kube_daemonset_rule {
     count(daemonset_list) = count(created_objects["azurerm_kubernetes_cluster"])
 }
 
+# Check daemonsets 
+default has_default_service_account = false
+sa_key := "service_account_name"
+
+has_default_service_account {
+    workloads := array.concat(created_objects["kubernetes_deployment"], created_objects["kubernetes_daemonset"])
+    spec := workloads[_].spec[_].template[_].spec[_]
+    val(key_func(spec,sa_key), spec,sa_key) == "default"
+}
+
+val("has_key", spec, key) = ret {
+    ret := spec[key]
+}
+
+val("no_key", spec, key) = ret {
+    ret := "default"
+}
+
+key_func(spec, key) = message {
+  message := "has_key"
+  has_key(spec, key)
+} else = default_out {
+  default_out := "no_key"
+}
+
+has_key(x, k) { x[k] }
+
 # list of all resources of a given type=
 addresses := [ address | address := tfplan.resource_changes[_].address ]
 
