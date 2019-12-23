@@ -12,7 +12,7 @@ kube_daemonset_rule {
 kube_daemonset_rule {
     count(created_objects["azurerm_kubernetes_cluster"]) > 0
     count(created_objects["kubernetes_daemonset"]) > 0
-    daemonset_list := [res |  res:= created_objects["kubernetes_daemonset"][_]; res; res.spec.template.spec.container[_].image == "docker.io/weaveworks/kured:1.2.0"]
+    daemonset_list := [res |  res:= created_objects["kubernetes_daemonset"][_]; res; res.spec[_].template[_].spec[_].container[_].image == "docker.io/weaveworks/kured:1.2.0"]
     count(daemonset_list) = count(created_objects["azurerm_kubernetes_cluster"])
 }
 
