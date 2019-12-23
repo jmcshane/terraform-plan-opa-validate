@@ -2,6 +2,40 @@ package terraform.parsing
 
 import input as tfplan
 
+# Check network security rules
+
+default found_open_ports = false
+rules := created_objects["azurerm_network_security_rule"]
+
+found_open_ports {
+    some i
+    inbound_rule(rules[i])
+    # All ports
+    rules[i].destination_port_range = "*"
+}
+found_open_ports {
+    some i
+    inbound_rule(rules[i])
+    # SSH Port
+    contains(rules[i].destination_port_range, "22")
+}
+found_open_ports {
+    some i
+    inbound_rule(rules[i])
+    # RDP Port
+    contains(rules[i].destination_port_range, "25")
+}
+
+inbound_rule(rule) = check {
+    rule.direction = "Inbound"
+    rule.access = "Allow"
+    rule.source_address_prefix = "Internet"
+    check := "true"
+} else = check {
+    check := "false"
+}
+
+
 # check AKS kured daemonset
 default kube_daemonset_rule = false
 
@@ -16,7 +50,7 @@ kube_daemonset_rule {
     count(daemonset_list) = count(created_objects["azurerm_kubernetes_cluster"])
 }
 
-# Check daemonsets 
+# Check Kubernetes workloads 
 default has_default_service_account = false
 sa_key := "service_account_name"
 
@@ -55,18 +89,4 @@ created_objects := {resource.type: spec |
     spec := [ after_spec |
         after_spec := tfplan.resource_changes[i].change.after
     ]
-}
-
-# map created resource to resource address
-address_by_type := { resource.type : address | 
-    some i
-    resource := tfplan.planned_values.root_module.resources[i]
-    address := [ resource_address |
-        resource_address := tfplan.planned_values.root_module.resources[i].address
-    ]
-}
-
-# map resource address to full expression with refs
-address_to_expressions := { resource.address : resource.expressions |
-    resource := tfplan.configuration.root_module.resources[_]
 }
