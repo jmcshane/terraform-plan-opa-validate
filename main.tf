@@ -169,3 +169,51 @@ resource "kubernetes_service" "example" {
     type = "LoadBalancer"
   }
 }
+
+resource "kubernetes_daemonset" "example" {
+  metadata {
+    name      = "kured"
+    namespace = "kube-system"
+  }
+
+  spec {
+    selector {
+      match_labels = {
+        name = "kured"
+      }
+    }
+
+    template {
+      metadata {
+        labels = {
+          name = "kured"
+        }
+      }
+
+      spec {
+        service_account_name = "kured"
+        host_pid             = true
+        toleration {
+            effect = "NoSchedule"
+            key    = "node-role.kubernetes.io/master"
+        }
+        container {
+            image = "docker.io/weaveworks/kured:1.2.0"
+            name  = "kured"
+            security_context {
+                privileged = true
+            }
+            env {
+                name = "KURED_NODE_ID"
+                value_from {
+                    field_ref {
+                        field_path = "spec.nodeName"
+                    }
+                }
+            }
+            command = ["/usr/bin/kured"]
+        }
+      }
+    }
+  }
+}
